@@ -1,0 +1,1 @@
+Core objective is evaluating neuromorphic architectures implemented on FPGAs for real-time data processing. We will use BrainChip's [[Akida]] MetaTF environment to handle the software side: quantizing and compiling SNNs so they can run efficiently inside the FPGA IP core.

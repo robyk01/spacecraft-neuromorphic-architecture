@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+
+knowledge-base/.obsidian/workspace.json
+knowledge-base/.obsidian/workspace-mobile.json
+
+knowledge-base/.trash/
