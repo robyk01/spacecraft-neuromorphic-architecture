@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .venv/
 .env
+.vscode
 
 knowledge-base/.obsidian/workspace.json
 knowledge-base/.obsidian/workspace-mobile.json
