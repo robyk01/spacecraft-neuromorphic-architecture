@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .env
 .vscode
+.DS_Store
 
 knowledge-base/.obsidian/workspace.json
 knowledge-base/.obsidian/workspace-mobile.json
