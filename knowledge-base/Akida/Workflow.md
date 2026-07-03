@@ -102,3 +102,6 @@ A helper function that automatically runs predictions and outputs final loss/acc
 | -------------------------------- | ----------------------- | ---------------------------------------------------------------------- | -------------------------- |
 | `model.predict(x_test)`          | Only inputs             | Runs the forward pass to generate raw guesses                          | The raw guesses themselves |
 | `model.evaluate(x_test, y_test)` | Inputs and truth labels | Runs the forward pass, then scores the results against the true labels | Performance metrics        |
+
+### Quantization
+### Convertion
