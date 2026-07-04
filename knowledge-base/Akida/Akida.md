@@ -30,7 +30,7 @@ The chip establishes an internal micro-timeline consisting of a fixed number of 
 Instead of reading the image at all once, the input hardware reads the brightness of the pixels to determine when each pixels fires an electrical pulse alog the silicon wires:
 - Pure white / ultra-bright pixels (e.g. 250): The hardware fires an eletrical pulse (1) at Clock Step 0 (immediately)
 - Medium gray / mid-tone pixels (e.g. 125): The hardware delays the signal and fires an eletrical pulse (1) at Clock Step 2
-- Pure Blkac / Dark Pixels (e.g. 0): The hardware emits nothing (0) across the entire timeline. The physical wire remains completely silent.
+- Pure Black / Dark Pixels (e.g. 0): The hardware emits nothing (0) across the entire timeline. The physical wire remains completely silent.
 Our static 64x64 image has now been transformed into a 4-frame movie of digital electrical pulses streaming across time.
 ###### 3.  Integrate and Fire
 Now that the image is a stream of pulses moving through time steps, those pulses travel along microscopic physical wires into Akida's neural processing cores (the quantized convolutional layers).
@@ -46,7 +46,11 @@ When dark pixels send no pulses the receiving transistors perform zero math. The
 ###### 4. The Scoreboard
 At the very end of the silicon pipeline sit the output neurons - one for each EuroSAT classification category. The output nodes act as dedicated digital counters standing open across the Clock Steps:
 - As features (like straight lines representing a highway or dense green textures representing a forest) are recognized by the earlier layers, cascades of pulses cascade down into the final output nodes.
-- If the patch contains a highwaym the **Highway Output Node** receives a rapid barrage of incoming pulses across the clock steps. Its internal integer counter rapidly ticks upward: +10, +22, +35.
+- If the patch contains a highway the **Highway Output Node** receives a rapid barrage of incoming pulses across the clock steps. Its internal integer counter rapidly ticks upward: +10, +22, +35.
 - The **Forest Output Node** receives mostly negative or inhibiting pulses, keeping its score buried near zero or below.
 ###### 5. Returning the Verdict
 Once the final clock step ticks to a close, the Akida hardware halts the simulation. The chips reads the final accumulated scores sitting in the output registers, sees that the HighWay register holds the highest integer score and sends a final array of scores back across the PCIe bus to the Raspberry Pi CPU. The scripts receives the results, tags that specific 64x64 patch as "Highway" and immediately grabs the next patch from the camera image to repeat the cycle.
+
+[Input Buffer] ──> [Pixel-to-Spike Gate] ──> [Silicon Layer 1] ──> [Silicon Layer 2]
+ (Raw 64x64x3)          (Clock Steps 0-3)             (32 Filter Sheets)           (64 Filter Sheets)
+NO FEATURES              NO FEATURES                    FEATURE MAPS              FEATURE MAPS
