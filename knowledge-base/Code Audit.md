@@ -108,7 +108,7 @@ x = tf.keras.layers.Conv2D(
 x = tf.keras.layers.BatchNormalization(name="stem_bn")(x)
 x = tf.keras.layers.ReLU(name="stem_relu")(x)
 ```
-A stanrd 3x3 convolution with 32 filters. Strides=2 parameter cuts the spatial height and width of the image in half - from 64x64 to 32x32.
+A standard 3x3 convolution with 32 filters. Strides=2 parameter cuts the spatial height and width of the image in half - from 64x64 to 32x32.
 BrainChip's QuantizeML and cnn2snn tools require clear visibility of the activation boundaries so they can replace them with specialized QuantizedReLU layers. Separate layers make quantization converion seamless, thats why we have a dedicated ReLU layer rather than passing `activation="relu"` inside the Conv2D layer.
 ###### 3. Depthwise-Separable Blocks
 Instead of standard convolutions, the rest of the network is built entirely out of a custom helper block called `dw_pw_block`. This block splits standard 3D convolutions into two distinct steps.
