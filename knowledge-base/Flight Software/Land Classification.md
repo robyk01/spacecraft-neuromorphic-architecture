@@ -1,5 +1,5 @@
 High-level analysis of existing code and functions. 
-The goal of this repository is to take standard EuroSAT RGB satellite tiles (64x64x3), train a hardware-efficient neural network, quantize it to integers, and convert it into a deployable Akida .fbz hardware file.
+The goal of this repository is to take standard EuroSAT RGB satellite tiles (64x64x3), train a hardware-efficient neural network, quantize it to integers, and convert it into a deployable [[Akida]] .fbz hardware file.
 
 ### Table of Contents
 1. [[#Configuration]]

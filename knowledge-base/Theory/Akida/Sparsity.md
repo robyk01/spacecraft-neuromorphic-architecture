@@ -4,7 +4,7 @@ BrainChip's Akida is just an accelerator on Convolutional Neural Networks (CNNs)
 
 On the left we can see a standard CNN processing all values. On the right, Akida hardware skips values of 0 thus leading to better efficiency (lower latency, the output is unchanged)
 
-![[Figures/Sparsity Representation.png|697]]
+![[Sparsity Representation.png|697]]
 
 In this figure we can see the representation of sparsity on a CNN. The black dots indicate zeros. 
 

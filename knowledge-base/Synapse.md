@@ -9,7 +9,9 @@ We pass that Keras model to [[QuantizeML]]. It converts the continuous floating-
 ###### The SNN Convertion
 We pass the quantized model to [[CNN2SNN]] convert function. This compiler looks at the integer weights and calculates the exact firing threshold needed for an integrate-and-fire network to mimic your CNN.
 ###### The Output
-The compiler bundles up the architecture, integer weights, and firing thresholds into a single hardware configuration file (fbz)
+The compiler bundles up the architecture, integer weights, and firing thresholds into a single hardware configuration file (fbz).
+
+[[Land Classification]]
 
 ### 2. The Flight
 ###### Flashing the Hardware
