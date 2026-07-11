@@ -69,7 +69,7 @@ class PipelineConfig:
     
 @dataclass
 class TrainConfig:
-    epochs: int = 30
+    epochs: int = 2
     learning_rate: float = 1e-3
     optimizer: str = "adam"  # "adam" or "sgd"
     label_smoothing: float = 0.0
@@ -77,7 +77,7 @@ class TrainConfig:
     # Callbacks / logging
     checkpoint_dir: str = project_root / "checkpoints"
     run_name: str = "eurosat_cnn_baseline"
-    early_stop_patience: int = 7
+    early_stop_patience: int = 2
     reduce_lr_patience: int = 3
     reduce_lr_factor: float = 0.5
     min_lr: float = 1e-6
@@ -174,6 +174,9 @@ def load_eurosat_tfds(
     print(f"  - val:   {val_split}")
     print(f"  - test:  {test_split}")
 
+    # skips file validation for testing
+    dl_config = tfds.download.DownloadConfig(register_checksums=True)
+
     # as_supervised=True returns (image, label)
     (ds_train, ds_val, ds_test), ds_info = tfds.load(
         tfds_name,
@@ -182,6 +185,7 @@ def load_eurosat_tfds(
         with_info=True,
         data_dir=data_dir,
         shuffle_files=False,  # deterministic file order; we control randomness in pipeline
+        download_and_prepare_kwargs={"download_config": dl_config}
     )
     
     image_dtype = ds_info.features["image"].np_dtype

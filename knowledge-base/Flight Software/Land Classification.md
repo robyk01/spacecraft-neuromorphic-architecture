@@ -13,6 +13,7 @@ The goal of this repository is to take standard EuroSAT RGB satellite tiles (64x
 9. [[#Convert to Akida with CNN2SNN]]
 10. [[#Evaluate Akida model]]
 11. [[#main()]]
+12. [[#Requirements and versioning]]
 
 ### Configuration
 This part creates dataclasses for configs (like PipelineConfig, TrainConfig, QuantizeConfig, AkidaConvertConfig).
@@ -285,3 +286,19 @@ When predicting on a Keras software model, batch sizes are mostly about GPU spee
 - `evaluate_model(model_quant)` $\rightarrow$ 8-bit integer accuracy.
 - `evaluate_akida_model(model_akida)` $\rightarrow$ Hardware neuromorphic accuracy.
 If we launch the payload and the accuracy is terrible, we won't know whose fault it is (either the CNN, QuantizeML, hardware conversion). By running this waterfall test, we rpove mathematically that the accuracy survived the jump from floats -> integers -> silicon. If Step 1 gets 95%, Step 2 gets 94%, and Step 3 gets 94%, you know the conversion is mathematically flawless.
+
+### Requirements and versioning
+To run this correctly we need to install these libraries:
+
+```python
+numpy==1.26.4
+tensorflow==2.15.0
+tensorflow-datasets==4.9.2
+matplotlib==3.8.4
+akida==2.16.1
+cnn2snn==2.16.1
+quantizeml==0.19.0
+akida-models==1.10.0
+```
+
+Note: for `tensorflow==2.15.0` the max python version we can run is `python 3.11`.
