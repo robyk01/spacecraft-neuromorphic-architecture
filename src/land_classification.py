@@ -175,7 +175,7 @@ def load_eurosat_tfds(
     print(f"  - test:  {test_split}")
 
     # skips file validation for testing
-    dl_config = tfds.download.DownloadConfig(register_checksums=True)
+    # dl_config = tfds.download.DownloadConfig(register_checksums=True)
 
     # as_supervised=True returns (image, label)
     (ds_train, ds_val, ds_test), ds_info = tfds.load(
@@ -185,7 +185,7 @@ def load_eurosat_tfds(
         with_info=True,
         data_dir=data_dir,
         shuffle_files=False,  # deterministic file order; we control randomness in pipeline
-        download_and_prepare_kwargs={"download_config": dl_config}
+        # download_and_prepare_kwargs={"download_config": dl_config}
     )
     
     image_dtype = ds_info.features["image"].np_dtype

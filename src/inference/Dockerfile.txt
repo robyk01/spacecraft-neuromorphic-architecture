@@ -1,0 +1,12 @@
+# Dockerfile pentru containerul Akida
+# Construieste o imagine Docker bazata pe Ubuntu 22.04
+# care contine Python si librariile necesare pentru a rula
+# inferenta pe chip-ul Akida (akida, numpy, Pillow).
+#
+# Build:  sudo docker build -t akida-image .
+# Run:    sudo docker run -it --device=/dev/akida0 -v /home/synapse2025/Desktop/akida_sample:/data akida-image
+
+FROM ubuntu:22.04
+RUN apt update && apt install -y python3 python3-pip
+RUN pip3 install akida==2.16.1 numpy==1.26.4 Pillow
+WORKDIR /data
