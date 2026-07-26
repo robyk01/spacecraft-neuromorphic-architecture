@@ -61,7 +61,7 @@ def compute_metrics(predictions, start_time, end_time):
     class_ids, counts = np.unique(predictions, return_counts=True)
 
     classes = [
-        "AnunalCrop", "Forest", "HerbaceousVegetation", "Highway", "Industrial", "Pasture", "PermanentCrop", "Residential", "River", "SaltLake"
+        "AnnualCrop", "Forest", "HerbaceousVegetation", "Highway", "Industrial", "Pasture", "PermanentCrop", "Residential", "River", "SeaLake"
     ]
 
     print(f"Total Patches: {total_patches} | FPS: {fps:.2f} | Avg Latency: {time_per_image:.2f}ms")
@@ -74,11 +74,11 @@ def compute_metrics(predictions, start_time, end_time):
 
 
 # Incarca modelul
-model = akida.Model("/data/eurosat_akida_model.fbz")
+model = akida.Model("data/models/attuned_model.fbz")
 model.summary()
 
 # Incarca imaginea
-img = Image.open("/data/image.png")
+img = Image.open("data/satellite_image.jpg").convert("RGB")
 img_array = np.array(img, dtype=np.uint8)
 flight_batch = prepare_flight_batch(img_array)
 

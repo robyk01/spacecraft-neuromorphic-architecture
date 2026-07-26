@@ -28,7 +28,7 @@ print("=" * 60)
 
 # Incarca modelul
 print("\nSe incarca modelul...")
-model = akida.Model("/data/eurosat_akida_model.fbz")
+model = akida.Model("/workspaces/spacecraft-neuromorphic-architecture/src/data/models/attuned_model.fbz")
 model.summary()
 
 # Statistici per clasa
@@ -41,7 +41,7 @@ print("\nSe ruleaza inferenta...\n")
 start_total = time.perf_counter()
 
 for class_idx, class_name in enumerate(classes):
-    folder = f"/data/images/{class_name}"
+    folder = f"/workspaces/spacecraft-neuromorphic-architecture/src/data/test_images_distorted/{class_name}"
     if not os.path.exists(folder):
         print(f"[SKIP] Folder negasit: {folder}")
         continue
