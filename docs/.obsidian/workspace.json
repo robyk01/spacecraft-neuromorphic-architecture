@@ -1,0 +1,217 @@
+{
+  "main": {
+    "id": "a7c46d7950c59588",
+    "type": "split",
+    "children": [
+      {
+        "id": "b383bb72edf2588c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a0a550a146b952a4",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "40e53dc206342a62",
+    "type": "split",
+    "children": [
+      {
+        "id": "511a4f6fb948354f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "655f2e7c4dbb7c43",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "0338d82d09985c98",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "8e7655281c1f00f3",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "1a87ec697c036525",
+    "type": "split",
+    "children": [
+      {
+        "id": "4065ceac54f6fe22",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e1ac9a27de16aa8e",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "314d6c812befa9bf",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Code Audit.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Code Audit"
+            }
+          },
+          {
+            "id": "e9f262a6b2869ad5",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "ecb567990603eadd",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "a1d679d85c80a9dd",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Code Audit.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Code Audit"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "a0a550a146b952a4",
+  "lastOpenFiles": [
+    "QuantizeML.md",
+    "Akida.md",
+    "Untitled.canvas",
+    "Untitled.base",
+    "Theory/Spiking Neural Networks/SNN.md",
+    "Theory/Spiking Neural Networks/Neuron Simulation.md",
+    "Theory/Convolutional Neural Networks/CNN.md",
+    "Theory/Akida/Workflow.md",
+    "Flight Software/Flight Pipeline.md",
+    "Flight Software/Data Augmentation.md",
+    "Flight Software/Data Augmentation.docx",
+    "Flight Software/Data Augmentation.docx.crdownload",
+    "Flight Software/Flight Pipeline.docx",
+    "Flight Software/Flight Pipeline.docx.crdownload",
+    "Reference/Figures/Satellite Images/Medium Cloud Coverage.png",
+    "Reference/Figures/Satellite Images/High Cloud Coverage.png",
+    "Reference/Figures/Satellite Images/Sun Glare Image.png",
+    "Reference/Figures/Satellite Images/Rayleigh Image.png",
+    "Reference/Figures/Satellite Images/Jitter Image 2.png",
+    "Reference/Figures/Satellite Images/Jitter Image 1.png",
+    "Reference/Figures/Satellite Images/Defocus Blur Image.png",
+    "Reference/Figures/Satellite Images/Motion Blur Image.png",
+    "Reference/Figures/Satellite Images",
+    "Reference/Figures/Satellite Images/Gaussian Noise Image.png",
+    "Reference/Figures/Satellite Images/Satellite Image.png",
+    "Flight Software/Land Classification.md",
+    "SYNAPSE_Payload_SW_Integration.docx",
+    "SYNAPSE_Payload_SW_Integration.docx.crdownload",
+    "SYNAPSE Payload SW Integration.md",
+    "Setup Rasp Pi + Akida.docx",
+    "Setup Rasp Pi + Akida.docx.crdownload",
+    "Theory/Akida/Akida.md",
+    "Synapse.md",
+    "Theory/Akida/QuantizeML.md"
+  ]
+}
