@@ -19,6 +19,12 @@ from PIL import Image
 import os
 import time
 
+def is_image_clear(image):
+    np_image = np.array(image.convert("L"))
+    pct = np.mean((np_image < 20) | (np_image > 230))
+
+    return pct <= 0.30
+
 classes = ['AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway',
            'Industrial', 'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake']
 
@@ -28,7 +34,7 @@ print("=" * 60)
 
 # Incarca modelul
 print("\nSe incarca modelul...")
-model = akida.Model("/workspaces/spacecraft-neuromorphic-architecture/src/data/models/attuned_model.fbz")
+model = akida.Model("src/data/models/attuned_model.fbz")
 model.summary()
 
 # Statistici per clasa
@@ -41,12 +47,14 @@ print("\nSe ruleaza inferenta...\n")
 start_total = time.perf_counter()
 
 for class_idx, class_name in enumerate(classes):
-    folder = f"/workspaces/spacecraft-neuromorphic-architecture/src/data/test_images_distorted/{class_name}"
+    folder = f"src/data/test_images_mixed/{class_name}"
     if not os.path.exists(folder):
         print(f"[SKIP] Folder negasit: {folder}")
         continue
 
     images = [f for f in os.listdir(folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+    images = images[:100]
+    unclear_images = 0
 
     start_class = time.perf_counter()
     for img_file in images:
@@ -54,6 +62,10 @@ for class_idx, class_name in enumerate(classes):
         img = Image.open(img_path).convert("RGB").resize((64, 64))
         img_array = np.array(img, dtype=np.uint8)
         img_array = np.expand_dims(img_array, axis=0)
+
+        if not is_image_clear(img):
+            unclear_images += 1
+            continue
 
         predicted = model.predict_classes(img_array)[0]
 
@@ -80,7 +92,7 @@ print(f"Acuratete globala       : {correct/total*100:.2f}%")
 print(f"Timp total              : {total_time:.2f}s")
 print(f"Timp mediu per imagine  : {total_time/total*1000:.2f}ms")
 print(f"Imagini per secunda     : {total/total_time:.1f} FPS")
-
+print(f"Imagini neclare         : {unclear_images}")
 # Info hardware Akida
 print("\n" + "=" * 60)
 print("INFO HARDWARE AKIDA")
