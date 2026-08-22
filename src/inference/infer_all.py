@@ -21,9 +21,42 @@ import time
 
 def is_image_clear(image):
     np_image = np.array(image.convert("L"))
-    pct = np.mean((np_image < 20) | (np_image > 230))
 
-    return pct <= 0.30
+    # Extreme Values
+    pct = np.mean((np_image < 20) | (np_image > 230))
+    pass1 = pct <= 0.30
+
+    # Cloud Deck
+    gray_mean = np.mean(np_image)
+    gray_std = np.std(np_image)
+    pass2 = gray_mean <= 170 or gray_std >= 15
+
+    # Blur check 
+    laplacian = (
+        np_image[:-2, 1:-1] 
+        + np_image[2:, 1:-1] 
+        + np_image[1:-1, :-2] 
+        + np_image[1:-1, 2:] 
+        - 4 * np_image[1:-1, 1:-1] 
+    )
+
+    laplacian_var = np.var(laplacian)
+
+    if gray_mean < 60:
+        pass3 = True
+    else:
+        pass3 = laplacian_var > 30.0
+
+    # Haze
+    np_image = np.array(image.convert("HSV"))
+
+    sat_mean = np.mean(np_image[:, :, 1])
+    val_mean = np.mean(np_image[:, :, 2])
+
+    is_hazy = (val_mean > 140) and (sat_mean < 35)
+    pass4 = not is_hazy
+    
+    return pass1 and pass2 and pass3 and pass4
 
 classes = ['AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway',
            'Industrial', 'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake']
@@ -46,6 +79,8 @@ per_class_total = {c: 0 for c in classes}
 print("\nSe ruleaza inferenta...\n")
 start_total = time.perf_counter()
 
+unclear_images = 0
+
 for class_idx, class_name in enumerate(classes):
     folder = f"src/data/test_images_mixed/{class_name}"
     if not os.path.exists(folder):
@@ -54,7 +89,6 @@ for class_idx, class_name in enumerate(classes):
 
     images = [f for f in os.listdir(folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     images = images[:100]
-    unclear_images = 0
 
     start_class = time.perf_counter()
     for img_file in images:

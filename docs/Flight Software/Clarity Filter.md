@@ -1,16 +1,16 @@
 ### Clarity Filter
 
 #### Clean Images
-|Baseline Model|Attuned Model (no filter)|Attuned Model + Extreme Values| Attuned Model + Cloud Deck|
+|Baseline Model|Attuned Model (no filter)|Attuned Model + Extreme Values| Attuned Model + Cloud Deck| Attuned Model + Spatial Gradient and Haze|
 |---|---|---|---|
-|96%|95%|95%|%|
+|96%|95%|95%|95%|95%|
 
 #### Distorted Images
-|Baseline Model|Attuned Model (no filter)|Attuned Model + Extreme Values| Attuned Model + Cloud Deck|
+|Baseline Model|Attuned Model (no filter)|Attuned Model + Extreme Values| Attuned Model + Cloud Deck| Attuned Model + Spatial Gradient and Haze|
 |---|---|---|
-|44.4%|46.1%|47.4%|%|
+|44.4%|46.1%|47.4%|47%|49.77%|
 
 #### Mixed Images
-|Baseline Model|Attuned Model (no filter)|Attuned Model + Extreme Values| Attuned Model + Cloud Deck|
+|Baseline Model|Attuned Model (no filter)|Attuned Model + Extreme Values| Attuned Model + Cloud Deck| Attuned Model + Spatial Gradient and Haze|
 |---|---|---|
-|70.2%|69.9%|71.3%|%|
+|70.2%|69.9%|71.3%|71.75%|75.72%|
