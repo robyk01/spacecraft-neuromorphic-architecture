@@ -31,6 +31,26 @@ def is_image_clear(image):
     gray_std = np.std(np_image)
     pass2 = gray_mean <= 170 or gray_std >= 15
 
+    np_image = np.array(image.convert("L"))
+    h, w = np_image.shape[:2]
+    mid_y, mid_x = h // 2, w // 2
+
+    ## Cloud Quadrant Check
+    quadrants = [
+        np_image[:mid_y, :mid_x],
+        np_image[:mid_y, mid_x:],
+        np_image[mid_y:, :mid_x],
+        np_image[mid_y:, mid_x:]
+    ]
+
+    pass5 = True
+    for quad in quadrants:
+        q_mean = np.mean(quad)
+        q_std = np.std(quad)
+
+        if q_mean > 175.0 and q_std < 18.0:
+            pass5 = False
+
     # Blur check 
     laplacian = (
         np_image[:-2, 1:-1] 
@@ -55,8 +75,15 @@ def is_image_clear(image):
 
     is_hazy = (val_mean > 140) and (sat_mean < 35)
     pass4 = not is_hazy
+
+    # Dark Channel
+    # np_image = np.array(image.convert("RGB"))
+    # dark_channel = np.min(np_image, axis=2)
+    # pass5 =  np.mean(dark_channel) < 60
+
     
-    return pass1 and pass2 and pass3 and pass4
+    
+    return pass1 and pass2 and pass3 and pass4 and pass5
 
 classes = ['AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway',
            'Industrial', 'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake']
