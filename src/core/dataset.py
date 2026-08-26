@@ -10,6 +10,124 @@ from .config import DatasetConfig
 
 import os
 
+# Noise injection functions
+def tf_gaussian_noise(image, mean=0, stddev=0.05):
+    noise = tf.random.normal(shape=tf.shape(image), mean=mean, stddev=stddev, dtype=tf.float32)
+    tf_image = image + noise
+    return tf.clip_by_value(tf_image, clip_value_min=0.0, clip_value_max=1.0)
+
+def tf_rayleigh(image, intensity=0.0):
+    img = tf.image.adjust_contrast(image, contrast_factor=0.75)
+
+    haze_color = tf.constant([150.0 / 255.0, 180.0 / 255.0, 220.0 / 255.0], dtype=tf.float32)
+
+    blended = (1.0 - intensity) * img + intensity * haze_color
+    return tf.clip_by_value(blended, 0.0, 1.0)
+
+def tf_jitter(image: tf.Tensor, max_brightness: float = 0.15, lower_contrast: float = 0.8, upper_contrast: float = 1.2) -> tf.Tensor:
+    img = tf.image.random_brightness(image, max_delta=max_brightness)
+    img = tf.image.random_contrast(img, lower=lower_contrast, upper=upper_contrast)
+    return tf.clip_by_value(img, 0.0, 1.0)
+
+def tf_sun_glare(image: tf.Tensor, max_glare: float = 0.6) -> tf.Tensor:
+    shape = tf.shape(image)
+    h, w = shape[0], shape[1]
+    
+    solar_color = tf.constant([255.0 / 255.0, 245.0 / 255.0, 235.0 / 255.0], dtype=tf.float32)
+    
+    gradient = tf.linspace(max_glare, 0.0, w)
+    mask = tf.tile(tf.expand_dims(gradient, 0), [h, 1])  # (H, W)
+    mask = tf.expand_dims(mask, -1)                      # (H, W, 1)
+    
+    if tf.random.uniform([]) > 0.5:
+        mask = tf.image.flip_left_right(mask)
+        
+    blended = (1.0 - mask) * image + mask * solar_color
+    return tf.clip_by_value(blended, 0.0, 1.0)
+
+def tf_motion_blur(image: tf.Tensor, kernel_size: int = 5) -> tf.Tensor:
+    k_center = kernel_size // 2
+    
+    kernel_1d = tf.zeros((kernel_size, kernel_size), dtype=tf.float32)
+    indices = [[k_center, i] for i in range(kernel_size)]
+    updates = tf.ones((kernel_size,), dtype=tf.float32) / float(kernel_size)
+    kernel_2d = tf.tensor_scatter_nd_update(kernel_1d, indices, updates)
+    
+    kernel_4d = tf.expand_dims(tf.expand_dims(kernel_2d, -1), -1)
+    kernel_4d = tf.tile(kernel_4d, [1, 1, 3, 1])
+    
+    img_4d = tf.expand_dims(image, 0)
+    blurred = tf.nn.depthwise_conv2d(img_4d, kernel_4d, strides=[1, 1, 1, 1], padding="SAME")
+    return tf.squeeze(blurred, axis=0)
+
+def tf_defocus_blur(image: tf.Tensor, kernel_size: int = 5, sigma: float = 1.5) -> tf.Tensor:
+    x = tf.range(-kernel_size // 2 + 1, kernel_size // 2 + 1, dtype=tf.float32)
+    g = tf.exp(-(x ** 2) / (2.0 * sigma ** 2))
+    g = g / tf.reduce_sum(g)
+    
+    g_2d = tf.tensordot(g, g, axes=0)
+    
+    kernel_4d = tf.expand_dims(tf.expand_dims(g_2d, -1), -1)
+    kernel_4d = tf.tile(kernel_4d, [1, 1, 3, 1])
+    
+    img_4d = tf.expand_dims(image, 0)
+    blurred = tf.nn.depthwise_conv2d(img_4d, kernel_4d, strides=[1, 1, 1, 1], padding="SAME")
+    return tf.squeeze(blurred, axis=0)
+
+def tf_clouds(image: tf.Tensor, thickness: float = 0.5, coverage: float = 1.0) -> tf.Tensor:
+    shape = tf.shape(image)
+    h, w = shape[0], shape[1]
+    
+    low_res = tf.random.uniform((1, 4, 4, 1), minval=0.0, maxval=1.0, dtype=tf.float32)
+    
+    cloud_mask = tf.image.resize(low_res, [h, w], method="bicubic")
+    cloud_mask = tf.squeeze(cloud_mask, axis=0)  # (H, W, 1)
+    
+    cloud_mask = tf.clip_by_value(cloud_mask * coverage * thickness, 0.0, 1.0)
+    
+    white_layer = tf.constant([1.0, 1.0, 1.0], dtype=tf.float32)
+    blended = (1.0 - cloud_mask) * image + cloud_mask * white_layer
+    return tf.clip_by_value(blended, 0.0, 1.0)
+
+def apply_data_augmentation(image_float: tf.Tensor) -> tf.Tensor:
+    """
+    Applies realistic independent effects.
+    """
+
+    # Optical and atmospheric disturbances that affect incoming light before hitting the lens
+    optics_prob = tf.random.uniform([])
+    if optics_prob < 0.25:
+        # Rayleigh haze
+        image_float = tf_rayleigh(image_float, intensity=tf.random.uniform([], 0.15, 0.35))
+
+    elif optics_prob < 0.40:
+        # Sun glare
+        image_float = tf_sun_glare(image_float, max_glare=tf.random.uniform([], 0.3, 0.5))
+
+    elif optics_prob < 0.55:
+        # Light clouds
+        image_float = tf_clouds(image_float, thickness=tf.random.uniform([], 0.2, 0.4), coverage=1.0)
+
+
+    # Dynamics / Lens focus which happen during image exposure and sensor capture
+    blur_prob = tf.random.uniform([])
+    if blur_prob < 0.20:
+        # Motion blur
+        image_float = tf_motion_blur(image_float, kernel_size=5)
+
+    elif blur_prob < 0.35:
+        # Defocus blur
+        image_float = tf_defocus_blur(image_float, kernel_size=5, sigma=tf.random.uniform([], 1.0, 1.8))
+
+
+    # Electrical / Sensor noise which happen at readout and radiation hits
+    if tf.random.uniform([]) < 0.30:
+        # Gaussian noise
+        image_float = tf_gaussian_noise(image_float, stddev=tf.random.uniform([], 0.03, 0.08))
+
+
+    return image_float
+
 def set_seeds(seed: int) -> None:
     """
     Set the random seed for Python, NumPy, and TensorFlow.
@@ -205,6 +323,8 @@ def build_tfdata_pipelines(
         img_f = tf.image.random_brightness(img_f, max_delta=0.08, seed=cfg.seed)
         img_f = tf.image.random_contrast(img_f, lower=0.9, upper=1.1, seed=cfg.seed)
         
+        img_f = apply_data_augmentation(img_f)
+
         # Ensure range still [0,1] after jitter
         img_f = tf.clip_by_value(img_f, 0.0, 1.0)
 

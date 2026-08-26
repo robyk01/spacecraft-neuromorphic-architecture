@@ -94,7 +94,7 @@ print("=" * 60)
 
 # Incarca modelul
 print("\nSe incarca modelul...")
-model = akida.Model("src/data/models/attuned_model.fbz")
+model = akida.Model("src/data/models/joint_quality_land_v1/model.fbz")
 model.summary()
 
 # Statistici per clasa

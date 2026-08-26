@@ -1,0 +1,98 @@
+{
+    "run_name": "joint_quality_land_v1",
+    "resume_from": null,
+    "skip_training": false,
+    "dataset": {
+        "seed": 42,
+        "tfds_name": "eurosat/rgb",
+        "train_pct": 70,
+        "val_pct": 15,
+        "test_pct": 15,
+        "resize_to": null,
+        "batch_size": 64,
+        "shuffle_buffer": 10000,
+        "cache": true,
+        "augment": true,
+        "data_dir": null,
+        "cloud_data_dir": "D:\\SYNAPSE\\Synapse\\subsystems\\payload\\data\\CloudOrObscured",
+        "cloud_train_fraction": 0.25
+    },
+    "model": {
+        "base_filters": 32,
+        "dense_units": 128,
+        "weight_decay": 0.0001,
+        "relu_max_value": 6.0
+    },
+    "training": {
+        "epochs": 30,
+        "learning_rate": 0.001,
+        "optimizer": "adam",
+        "label_smoothing": 0.0,
+        "quality_loss_weight": 1.0,
+        "land_loss_weight": 1.0,
+        "early_stop_patience": 7,
+        "reduce_lr_patience": 3,
+        "reduce_lr_factor": 0.5,
+        "min_lr": 1e-06,
+        "use_tensorboard": false
+    },
+    "quantization": {
+        "input_weight_bits": 8,
+        "weight_bits": 4,
+        "activation_bits": 4,
+        "per_tensor_activations": true,
+        "num_samples": 1024,
+        "batch_size": 100,
+        "epochs": 2,
+        "resize_to": null,
+        "learning_rate": 0.001,
+        "optimizer": "adam",
+        "qat_enabled": true,
+        "qat_epochs": 5,
+        "qat_learning_rate": 0.0001,
+        "qat_early_stop_patience": 2,
+        "qat_reduce_lr_patience": 1,
+        "qat_reduce_lr_factor": 0.5,
+        "qat_min_lr": 1e-06
+    },
+    "akida": {
+        "save_path": "D:\\SYNAPSE\\Synapse\\subsystems\\payload\\models\\joint_quality_land_v1\\model.fbz",
+        "akida_version": "v1",
+        "map_to_device": false,
+        "hw_only": true
+    },
+    "input_shape": [
+        64,
+        64,
+        3
+    ],
+    "quality_class_names": [
+        "Clear",
+        "CloudOrObscured"
+    ],
+    "land_class_names": [
+        "AnnualCrop",
+        "Forest",
+        "HerbaceousVegetation",
+        "Highway",
+        "Industrial",
+        "Pasture",
+        "PermanentCrop",
+        "Residential",
+        "River",
+        "SeaLake"
+    ],
+    "num_quality_classes": 2,
+    "num_land_classes": 10,
+    "total_output_count": 12,
+    "output_layout": {
+        "quality": {
+            "start": 0,
+            "stop": 2
+        },
+        "land": {
+            "start": 2,
+            "stop": 12
+        }
+    }
+}
