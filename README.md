@@ -23,6 +23,7 @@ Key objectives:
 ### 1. Flight Inference Pipeline (`infer.py`, `infer_all.py`)
 - Implemented high-resolution image preprocessing: boundary ceiling calculations, zero-padding for edge mismatches, and 64x64 patch grid slicing (`slice_image`, `prepare_flight_batch`).
 - Built the on-device Akida hardware inference runtime and batch evaluation engine (`infer_all.py`) with per-class accuracy and latency tracking.
+- Eliminated CPU thermal bottlenecks on the flight computer by replacing PNG disk serialization with in-memory NumPy binary transfers (batch.npy) and transitioning from patch-by-patch driver calls to single-shot batch inference on the Akida NPU.
 
 ### 2. Dataset Synthesis & Degradation Modeling (`data_augment.ipynb`)
 - Built the synthetic distorted and mixed test image datasets for validation (`test_images_distorted/`, `test_images_mixed/`).
