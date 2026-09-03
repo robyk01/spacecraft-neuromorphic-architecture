@@ -1,0 +1,18 @@
+Setup software:
+In fisierele de mai jos se gaseste codul pe care l-am folosit pentru a testa payload-ul (script.py). Acesta are 3 parti pe care le face succesiv (cu o perioada de timp data din cod, pe care o putem modifica): 
+Face poze
+Le preproceseaza
+Le clasifica
+Seria 1 de teste:Setup interior:
+Setup exterior:Mentiune: ultimii 2 pereti nu au mai fost insurubati, nu exista izolatie la muchiile cutiei. Gaura pentru incarcator este acoperita cu o bucata de polistiren.Test 0: intrerupt din cauza temperaturii mari
+Test 1:intrerupt din cauza temperaturii mari
+Test 2:intrerupt din cauza temperaturii mari
+Test 3: terminat (durate de timp mai mici), am incercat sa testez modul akida.
+Recomandari generale:
+Rasp pi-ul sa nu fie in contact direct cu vreun perete. Dupa cateva minute de functionare, se incinge simtior perete exterior
+Partea de pre-procesare creste brusc temperatura -> ar trebui sa petreaca minim de timp in aceasta stare. Este ok,pentru ca este o stare rapida. In practica ar trebui sa petreaca aici 1-2 min. Dupa ce opresc aceasta stare, se revine la 65-70 grade temp de baza.
+Varianta care pare cea mai fezabila este sa pornim si sa oprim rasp pi-ul. Ramane de vazut cum se comporta la temperaturi scazute. 
+Next Steps for testing:
+Testing inside the casing with the akida with heatsink
+Testing inside the casing with a ventilator (and account for air rarefiation at 30km)
+Testing in a freezer, together with polistiren casing;
