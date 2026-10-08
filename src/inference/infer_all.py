@@ -85,8 +85,10 @@ def is_image_clear(image):
     
     return pass1 and pass2 and pass3 and pass4 and pass5
 
-classes = ['AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway',
-           'Industrial', 'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake']
+classes = [
+        "AnnualCrop", "Forest", "HerbaceousVegetation", "Highway",
+        "Industrial", "PermanentCrop", "Residential", "River"
+    ]
 
 print("=" * 60)
 print("AKIDA INFERENCE - EuroSAT Dataset")

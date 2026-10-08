@@ -10,6 +10,31 @@ from .config import DatasetConfig
 
 import os
 
+# 8-class list
+eurosat_8_classes = [
+    "AnnualCrop",
+    "Forest",
+    "HerbaceousVegetation",
+    "Highway",
+    "Industrial",
+    "PermanentCrop",
+    "Residential",
+    "River"
+]
+
+label_mapping = tf.constant([0, 1, 2, 3, 4, 2, 5, 6, 7, -1])
+
+def remap_and_filter_split(dataset: tf.data.Dataset) -> tf.data.Dataset:
+    def _remap(image, label):
+        new_label = tf.gather(label_mapping, tf.cast(label, tf.int32))
+        return image, new_label
+
+    dataset = dataset.map(_remap, num_parallel_calls=tf.data.AUTOTUNE)
+
+    dataset = dataset.filter(lambda image, label: label >= 0)
+
+    return dataset
+
 # Noise injection functions
 def tf_gaussian_noise(image, mean=0, stddev=0.05):
     noise = tf.random.normal(shape=tf.shape(image), mean=mean, stddev=stddev, dtype=tf.float32)
@@ -252,6 +277,10 @@ def load_eurosat_tfds(
     print(f"  - num_classes: {num_classes}")
     print(f"  - image_shape: {image_shape}")
     print(f"  - classes: {class_names}")
+
+    ds_train = remap_and_filter_split(ds_train)
+    ds_val = remap_and_filter_split(ds_val)
+    ds_test = remap_and_filter_split(ds_test)
 
     datasets = {"train": ds_train, "val": ds_val, "test": ds_test}
     return datasets, ds_info

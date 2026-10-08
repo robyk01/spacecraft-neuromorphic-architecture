@@ -47,6 +47,8 @@ from .core.training import (
     train_cnn_model,
 )
 
+from .core.dataset import eurosat_8_classes
+
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -341,13 +343,9 @@ def main() -> None:
         cfg=dataset_cfg,
     )
 
-    class_names = list(
-        dataset_info.features["label"].names
-    )
+    class_names = eurosat_8_classes
 
-    num_classes = int(
-        dataset_info.features["label"].num_classes
-    )
+    num_classes = len(class_names)
 
     input_shape = determine_input_shape(
         dataset_info=dataset_info,

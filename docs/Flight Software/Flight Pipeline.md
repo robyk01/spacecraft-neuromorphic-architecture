@@ -15,12 +15,12 @@
         ▼
 [Hardware Inference (start_akida.sh -> Docker -> inference.py)]
         │  Loads batch.npy; dispatches full batch in ONE call to /dev/akida0
-        │  Writes telemetry CSV: poza_XXXX.csv [frame, eticheta]
+        │  Writes telemetry CSV: poza_XXXX.csv [frame, eticheta] and binary (each slice is packed into a single 1-byte integer)
         ▼
 [Downlink & Summary (inference_performances.py)]
         │  Logs summary to log_performanta.csv
         ▼
-[Radio Downlink to Ground Station (CSV only)] & [SD Card Storage (Raw Images)]
+[Radio Downlink to Ground Station (CSV and binary)] & [SD Card Storage (Raw Images)]
 ```
 
 #### 1. Photo Acquisition & Candidate Selection
@@ -44,7 +44,7 @@
   - `frame`: `Frame_0`, `Frame_1`, ...
   - `eticheta`: Predicted EuroSAT class (`Forest`, `AnnualCrop`, `Highway`, etc.)
 - Overall execution metrics (FPS, total frames, total time) are appended to `log_performanta.csv`.
-- Downlink telemetry only transmits the lightweight CSV classifications to the Ground Station, while raw full-resolution photos remain safely on the SD card for post-mission physical retrieval.
+- Downlink telemetry transmits the CSV alongside binary classifications to the Ground Station, while raw full-resolution photos remain safely on the SD card for post-mission physical retrieval.
 
 ---
 

@@ -16,6 +16,10 @@ from PIL import Image
 import math
 import time
 from typing import List
+import os
+
+OUTPUT_DIR = "src/data"
+image_name = "satellite_image"
 
 # fragments image in 64x64 parts, returns a list of batches
 def slice_image(image: np.ndarray) -> List[np.ndarray]:
@@ -121,7 +125,8 @@ def compute_metrics(predictions, start_time, end_time, unclear_cnt):
     class_ids, counts = np.unique(predictions, return_counts=True)
 
     classes = [
-        "AnnualCrop", "Forest", "HerbaceousVegetation", "Highway", "Industrial", "Pasture", "PermanentCrop", "Residential", "River", "SeaLake"
+        "AnnualCrop", "Forest", "HerbaceousVegetation", "Highway",
+        "Industrial", "PermanentCrop", "Residential", "River"
     ]
 
     print(f"Total Patches: {total_patches} | FPS: {fps:.2f} | Avg Latency: {time_per_image:.2f}ms")
@@ -136,7 +141,7 @@ def compute_metrics(predictions, start_time, end_time, unclear_cnt):
 
 
 # Incarca modelul
-model = akida.Model("src/data/models/attuned_model.fbz")
+model = akida.Model("src/data/models/eurosat_8classes_v1/model.fbz")
 model.summary()
 
 # Incarca imaginea
@@ -149,6 +154,13 @@ if flight_batch.shape[0] > 0:
     start_time = time.perf_counter()
     predictions = model.predict_classes(flight_batch)
     end_time = time.perf_counter()
+
+    csv_path = os.path.join(OUTPUT_DIR, f"{image_name}.csv")
+    bin_path = os.path.join(OUTPUT_DIR, f"{image_name}.bin")
+
+    # binary file with predictions for each patch as uint8 
+    predictions.astype(np.uint8).tofile(bin_path)
+
     compute_metrics(predictions, start_time, end_time, unclear_cnt)
 else:
     print(f"Niciun patch nu a trecut de filtru. Imagini neclare: {unclear_cnt}")
