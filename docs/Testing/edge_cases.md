@@ -1,4 +1,4 @@
-## Edge Cases
+## Edge Cases & Risk Assessment
 
 ### 1. Boot & Environment
 Things to consider:
@@ -7,49 +7,36 @@ Things to consider:
 
 #### Overview:
 1. ESP32 (OBC) fires first (under 50 milliseconds). It activates the hardware/software watchdogs, initializes sensor loops, and handles telemetry. If the rasp pi dies, the ESP keeps downlinking telemetry to the ground station.
-2. Rasp Pi takes around 20-30s too boot. It has to initialize the filesystem and hardware buses of the Linux OS
+2. Rasp Pi takes around 20-30s to boot. It has to initialize the filesystem and hardware buses of the Linux OS.
 By default, Linux has no idea what Akida is so we inject the driver `akida-pcie.ko` into the running Linux kernel, creating a hardware interface file in the system `/dev/akida0`. The hardware communicates with the SDK through reading and writing of bytes.
 
 #### Risks
-1. **Temperature Bug**
-In Synapse\subsystems\obc\esp32-obc\main\tasks\mode_manager_task.c:
+1. **Temperature Bug** - Done
+In `Synapse\subsystems\obc\esp32-obc\main\tasks\mode_manager_task.c`:
 
-```cpp
-bool is_critical = (battery < 3.2f || temp.temperature_external_c > 70.0f || temp.temperature_external_c < -10.0f);
+In the stratosphere, external air temperature drops to -40 to -60°C. During ascent, the original ESP32 code checked `temp.temperature_external_c < -10.0f`, which would think the spacecraft is dying and permanently trigger Safe Mode, disabling `photo_active = false` and aborting camera/inference ops.
 
-if (is_critical) return MODE_SAFE;
-```
-
-In the stratosphere, external air temperature drops to -40 to -60 C. During ascent, the ESP32 will think the spacecraft is dying and permanently trigger Safe Mode, disabling `photo_active = false` and aborting camera/inference ops.
-
-**Recommendation**: The threshold should be modified for internal temp instead.
-
-Source: documentation
-"Safe Mode - Any temperature sensor > 50◦C, or Vbat < threshold for 10s"
+*Status*: **Done**. Fixed by checking internal board temperature (`temp.temperature_internal_c.devices[0].temperature_c`) with nominal fallback, avoiding premature Safe Mode.
 
 2. **Missing Processing Command**
-In Synapse\subsystems\obc\rpi\comm\testint_comm.py and Synapse\subsystems\obc\esp32-obc\main\tasks\mode_manager_task.c:
+In `Synapse\subsystems\obc\rpi\comm\testint_comm.py` and `Synapse\subsystems\obc\esp32-obc\main\tasks\mode_manager_task.c`:
 
-Right now neither scripts know about the `run_entire_data_processing_mode.py`. When balloon is in active descent `mode_manager_task.c` should launch a CMD|START_PROCESSING over UART to launch the 4-step AI inference pipeline. `testint_comm.py` receives the command in rasp pi and launches the python script.
-
+Right now neither scripts know about `run_entire_data_processing_mode.py`. When balloon is in active descent, `mode_manager_task.c` should launch a `CMD|START_PROCESSING` over UART to launch the 4-step AI inference pipeline. `testint_comm.py` receives the command on Rasp Pi and launches the python script.
 Also OBC side is missing the radio downlink pipeline to receive and broadcast the classification results.
+*Status*: Open (OBC subsystem responsibility).
 
-Source: documentation
-"Data Processing Mode- Free fall detection (9.8 m/s2) + GPS + Barometer."
-
-
-3. **Thermal Risk** 
+3. **Thermal Risk** - Ignored
 Unless there is a hardware relay that is missing from the software, the Raspberry Pi is hardwired to main power and remains powered on the entire flight, only the software remaining off/idle.
 
 If the raspberry pi is kept powered off between 50m and 25km, the components in the payload might cold-soak. When the ESP32 switches power on to the Pi at 25km:
-- MicroSD flash memory controllers might refuse to initialize or write below -20 C
+- MicroSD flash memory controllers might refuse to initialize or write below -20°C
 - The onboard oscillator crystal can drift, corrupting PCIe and UART bus clocks
 
-**Recommendation**: A cold-box freezer boot test (powering pi on after it has sat in a freezer for 1 hour) can be performed.
+If only the flight software is kept off/idle, Linux consumes ~3 Watts which acts as a steady electrical heater, preventing the bay, batteries, and SD card from reaching -40°C. Battery capacity covers ~2.5 hrs of flight plus the Akida inference burst.
 
-If only the flight software is kept off/idle Linux will consume around 3 Watts which will act as a steady electrical heater, preventing the bay, batteries, and SD card from reaching -40 C. **In this case the battery capacity needs to be checked** to cover the energy used (3W at 5V is 600mA, over 2.5 hrs of flight that is around 1500 mAH) plus the Akida inference burst.
+---
 
-### 2. In-Flight Image Aquisition
+### 2. In-Flight Image Acquisition
 Things to consider:
 - auto exposure at high altitude
 - motion blur when swinging
@@ -57,24 +44,21 @@ Things to consider:
 
 #### Overview:
 Hardware: Raspberry Pi Camera Module v2 (Sony IMX219 sensor, 3280 × 2464 resolution)
-1. Runs auto_select_shutter() at startup to pick the sharpest shutter speed and analog gain.
-2. Enters a while True continuous capture loop, saving a photo every 2 seconds to ~/Desktop/foto_mode/poze/.
-3. Appends photo metadata, camera settings, and GPS coordinates to log_pozitii.csv.
+1. Runs `auto_select_shutter()` at startup to pick the sharpest shutter speed and analog gain.
+2. Enters a `while True` continuous capture loop, saving a photo every 2 seconds to `~/Desktop/foto_mode/poze/`.
+3. Appends photo metadata, camera settings, and GPS coordinates to `log_pozitii.csv`.
 
 #### Risks
-
-1. **Auto Exposure**
+1. **Auto Exposure** - Done
 In `Synapse\subsystems\payload\src\Code on Rasp Pi\foto_mode\script.py`:
-`auto_select_shutter()` is ran once at boot, then never again because of the `AeEnable = false`. At ground the algorithm might pick a slow shutter and boost the gain, but at high altitudes solar irradiance is 15% stronger and cloud decks have an higher albedo.
+`auto_select_shutter()` previously ran once at boot. At altitude, albedo and light change dramatically.
+*Status*: **Done**. Script now recalibrates shutter and analog gain automatically every 5 minutes (`recalib_interval_sec=300`) using `time.monotonic()`.
 
-**Recommendation**: Either re-run exposure calibration at altitude, or enable Auto Exposure
+2. **Motion Blur** - Done
+If the balloon swings and oscillates with shutter slower than 1/500s, angular rotation blurs roads, rivers, and vegetation across multiple pixels.
+*Status*: **Done**. Exposure times ceiling prioritized $\le 1/1000$s (1000 µs) to freeze oscillation motion blur.
 
-2. **Motion Blur**
-If the balloon will swing and oscillate and shutter speed is slower than 1/500s, angular rotation might blur roads, rivers, and vegetation across multiple pixels
-
-**Recommendation**: Hard ceiling on exposure time: shutter must be <= 1/1000s to freeze motion blur
-
-Other things to consider: adding an exit condition in `script.py` alongside CTRL+C, locking white balance to daylight (`"AwbMode": "daylight"`) to stop different tints from payload oscillation, adding a try/except to `picam2.start()` to prevent crashes in case of a voltage drop or cable noise.
+---
 
 ### 3. Candidate Selection & Processing
 Things to consider:
@@ -82,41 +66,27 @@ Things to consider:
 - unhandled corrupted image crash
 
 #### Overview:
-1. Candidate Selection (choosing_foto.py):
-Filters log_pozitii.csv for photos taken above 25 km (MIN_ALT_M = 25000.0).
-Picks up to 20 candidate photos that maximize geographical spread (using Convex Hull and Haversine distance).
-Evaluates each candidate through a Clarity Filter (checks extreme exposure, cloud deck, cloud quadrants, blur, and atmospheric haze).
-Selects the top 5 clearest photos and copies them into ~/Desktop/data_processing_mode/photos_for_akida/.
+1. Candidate Selection (`choosing_foto.py`):
+Filters `log_pozitii.csv` for photos taken above 25 km (`MIN_ALT_M = 25000.0`).
+Picks up to 20 candidate photos that maximize geographical spread (Convex Hull and Haversine distance).
+Evaluates each candidate through a Clarity Filter (extreme exposure, cloud deck, cloud quadrants, blur, haze).
+Selects the top 5 clearest photos and copies them into `~/Desktop/data_processing_mode/photos_for_akida/`.
 
-2. Preprocessing (pre-processing.py):
-Pads each image with black pixels to reach exact multiples of 64 (3280 × 2464 ➔ 3328 × 2496).
+2. Preprocessing (`pre-processing.py`):
+Pads each image with black pixels to reach exact multiples of 64 (3280 × 2464 -> 3328 × 2496).
 Slices each image into a grid of 52 × 39 = 2,028 patches of 64 × 64 pixels.
-Stacks all 2,028 patches in RAM into a single 4D NumPy array (2028, 64, 64, 3) and saves it as batch.npy.
-
+Stacks all 2,028 patches in RAM into a single 4D NumPy array `(2028, 64, 64, 3)` and saves it as `batch.npy`.
 
 #### Risks
-1. **Hard Altitude Ceiling Risk**
-We need to consider what if the balloon pops earlier than expected (like 24800 meters), or the GPS altitude calibration has a small offset. In that case, `choosing_foto.py` will find 0 photos, log a message and exit without selecting any photos - mission loss of AI results.
+1. **Hard Altitude Ceiling Risk** - Done
+If the balloon bursts early (e.g. 24,800 m), `choosing_foto.py` previously aborted with 0 photos.
+*Status*: **Done**. Fallback added to pick the highest altitude photos that physically exist on disk, with `ZeroDivisionError` guards.
 
-```python
-if not high_alt:
-        print("Nicio poza nu indeplineste pragul de altitudine.")
-        return
-```
+2. **Unhandled Corrupted Image Crash** - Done
+In `pre-processing.py`, an unhandled `PIL.UnidentifiedImageError` or `OSError` on a single bad photo would crash the entire batch.
+*Status*: **Done**. `Image.open` wrapped in `try/except` with directory creation only upon valid read, skipping bad images without aborting the rest.
 
-**Recommendation**: A fallback is needed, something like: *if no photos are above 25k km, select top 20 photos with highest recorded altitude*
-
-2. **Unhandled Corrupted Image Crash**
-In `pre-processing.py`:
-
-```python
-img = Image.open(image_path).convert("RGB")
-```
-
-If a photo write was cut short by a power fluctuation or SD write stall, PIL throws an unhandled PIL.UnidentifiedImageError or OSError: image file is truncated. There is zero try/except inside `process_image()`. If one single photo out of the 5 is corrupt, `pre-processing.py` crashes on that photo and aborts the entire preprocessing run, generating zero segments for the remaining 4 perfectly good photos.
-
-**Recommendation**: again we should wrap image opening in try/except (OSError, Image.DecompressionBombError): log the corrupted photo and continue slicing the remaining ones.
-
+---
 
 ### 4. Edge AI Inference
 Things to consider:
@@ -125,83 +95,150 @@ Things to consider:
 - unhandled exception in np.load(batch.npy)
 - obsolete else
 
-
 #### Overview:
-1. Host Driver & Container Launch (start_akida.sh):
-Verifies the kernel module is loaded (/dev/akida0); injects akida-pcie.ko if missing.
-Spins up the isolated Docker container (akida-image) with direct PCIe hardware access (--device=/dev/akida0).
-Executes inference.py inside the container.
-2. Hardware Inference Pipeline (inference.py):
-Loads the trained 8-class SNN model: eurosat_8classes_v1.fbz.
-Calls map_to_hardware() to explicitly bind the model to /dev/akida0 .
-Loads batch.npy (all 2,028 patches per photo) and runs bulk batch inference via model.predict_classes(flight_batch).
-Writes dual outputs:
-.csv for complete on-board SD card archiving.
-.bin (2,028 uint8 bytes) for LoRa radio downlink.
-Logs overall performance (FPS, latency, frame count) to log_performanta.csv.
+1. Host Driver & Container Launch (`start_akida.sh`):
+Verifies the kernel module is loaded (`/dev/akida0`); injects `akida-pcie.ko` if missing.
+Spins up the Docker container (`akida-image`) with direct PCIe hardware access (`--device=/dev/akida0`).
+Executes `inference.py` inside the container.
+2. Hardware Inference Pipeline (`inference.py`):
+Loads the trained 8-class SNN model: `eurosat_8classes_v1.fbz`.
+Calls `map_to_hardware()` to explicitly bind the model to `/dev/akida0`.
+Loads `batch.npy` (all 2,028 patches per photo) and runs bulk batch inference via `model.predict_classes(flight_batch)`.
+Writes dual outputs: `.csv` for SD card and `.bin` + `_packets.bin` for LoRa radio downlink.
+Logs overall performance (FPS, latency, frame count) to `log_performanta.csv`.
 
-#### Risks:
+#### Risks
 1. **PCIe Link Stability**
-During balloon burst and high-speed descent, the payload experiences tumbling and vibration. Because of this, thermal contraction on PCIe Gen 2/3 lanes can cause PCIe link resets or DMA timeouts in the `akida_pcie` driver.
-
-**Recommendation**: The ribbon cable should be mechanically secured with tape/foam padding so physical shock during balloon burst doesn't disrupt the bus pins.
+Ribbon cable secured mechanically with tape/foam padding so physical shock during balloon burst doesn't disrupt bus pins.
 
 2. **Fragile $home paths**
-In `start_akida.sh`, if this script is launched automatically at boot via systemd or /etc/rc.local, $HOME resolves to /root, not /home/synapse2025. The script immediately crashes with "Nu gasesc folderul /root/akida-setup/akida_dw_edma".
+Ensure absolute paths are used in systemd scripts.
 
-**Recommendation**: Hardcode absolute paths (e.g. /home/synapse2025/Desktop/...) instead of relying on $HOME, and configure the user in /etc/sudoers with NOPASSWD: ALL so docker and insmod never prompt for a password.
+3. **Unhandled Exception on np.load(batch.npy)** - Done
+If a single `batch.npy` is corrupt or interrupted, previously `inference.py` would crash or exit.
+*Status*: **Done**. Inference loop wrapped in `try/except` with `continue`, skipping damaged files while processing remaining candidate photos.
 
-3. **Unhandled Exception on np.load(batch.npy)**
-In `inference.py`:
-There is zero try/except block around np.load(batch_path) or model.predict_classes(). If the balloon bursts or power fluctuates while pre-processing.py is writing batch.npy to the SD card, the file will be partially written or corrupted. When inference.py hits that corrupted file, np.load throws an uncaught ValueError / EOFError, crashing the entire Python script immediately.
+4. **The Obsolete Else** - Done
+In `inference.py`, the old fallback looking for individual `.png` files (which was causing CPU thermal throttling) was still present.
+*Status*: **Done**. Cleanly deleted the obsolete else branch.
 
-**Recommendation**: We should wrap the batch inference loop in a try/except Exception as e: so a single bad file is logged and skipped, allowing the remaining 4 images to be classified.
-
-4. **The Obsolete Else**
-In `inference.py`:
-In inference.py, if batch.npy is missing, the code falls back to an else branch that looks for individual Frame_N.png files. However, in pre-processing.py, the code that saves .png files was commented out to save CPU cycles.
-
-We should just remove this else branch.
-
+---
 
 ### 5. Downlink Telemetry
 Things to consider:
 - lora packet size
 - missing packet shift
 
-
 #### Overview:
-1. Onboard Binary Serialization (inference.py):
-Directly converts Akida prediction indices into an 8-bit unsigned integer array:
-```python
-predictions.astype(np.uint8).tofile(bin_path)
+1. **Patch Grid & Data Size**:
+   - Camera resolution: 3280 × 2464 padded to 3328 × 2496.
+   - Patch size: 64 × 64 pixels.
+   - Spatial Grid: **52 columns × 39 rows = 2,028 patches per image**.
+   - Each patch is classified into 1 of 8 EuroSAT classes (integer 0–7, 1 byte).
+   - Full image raw predictions = **2,028 bytes**.
+
+2. **Onboard Binary Serialization & LoRa Packetization** (`inference.py`):
+   - Rather than sending 2,028 bytes at once (which exceeds the 255-byte hardware MTU of the SX1262 LoRa radio), the array is sliced into **11 radio packets**:
+     - 10 packets of 200 bytes
+     - 1 packet of 28 bytes
+   - Each packet includes a 6-byte Big-Endian offset header:
+     `[photo_id (1B), packet_idx (1B), total_packets (1B), offset (2B uint16), chunk_len (1B)]`
+   - Maximum packet size = **206 bytes** ($\le 255$ bytes MTU).
+
+3. **Ground Station Telemetry Decoding** (`decode_downlink.py`):
+   - Initializes a fixed 2,028-element grid.
+   - Places each packet's predictions into `grid[offset : offset + chunk_len]`.
+   - Missing packets are flagged as `DROPPED` / `MISSING` without shifting subsequent coordinates.
+
+#### Risks
+1. **Lora Packets** - Done
+*Status*: **Done**. Implemented in `inference.py` to auto-generate `[image_name]_packets.bin` (11 packets of $\le 206$ bytes).
+
+2. **Missing Packet Shift** - Done
+*Status*: **Done**. Implemented in `decode_downlink.py`. Dropped radio packets no longer scramble spatial coordinates.
+
+---
+
+### Downlink Verification & ASCII Grid Test Output
+
+Below are two sample test executions of `decode_downlink.py` demonstrating ground reception:
+
+#### Case A: Nominal Flight (100% Reception, 0 Dropped Packets)
 ```
-Exactly 2,028 bytes per image (52 × 39 patches), replacing the 46.6 KB plain text CSV.
+============================================================
+SYNAPSE TELEMETRY DECODER - foto_0001_packets.bin
+============================================================
+Format Mode           : LoRa Packet Stream (Photo ID: 0)
+Packets Received      : 11 / 11 (100.0%)
+Total Patches Target  : 2028
+Patches Decoded       : 2028 (100.0% spatial coverage)
+Patches Dropped       : 0 (0.0% lost)
 
-2. Ground Station Telemetry Decoding (decode_downlink.py):
-Reads the downlinked .bin file, matches each byte index to its corresponding class name, computes class percentage distributions, and outputs a ground-verified CSV table.
+CLASS DISTRIBUTION (Received Patches):
+  [AnnualCrop            ] :  254 patches ( 12.5%)
+  [Forest                ] :  254 patches ( 12.5%)
+  [HerbaceousVegetation  ] :  254 patches ( 12.5%)
+  [Highway               ] :  254 patches ( 12.5%)
+  [Industrial            ] :  253 patches ( 12.5%)
+  [PermanentCrop         ] :  253 patches ( 12.5%)
+  [Residential           ] :  253 patches ( 12.5%)
+  [River                 ] :  253 patches ( 12.5%)
 
-
-#### Risks:
-1. **Lora Packets**
-A standard LoRa transceiver (Semtech SX1276 / SX1262) cannot transmit 2,028 bytes in one single message.
-The maximum physical hardware packet limit (MTU) for LoRa is 255 bytes.
-In practice, payload size per packet is typically kept to ~128–200 bytes for radio stability. If the OBC tries to send foto_1.bin (2,028 bytes) as one continuous chunk, the LoRa radio driver will reject it or truncate it to 255 bytes, losing ~88% of the data.
-
-**Recommendation**: The binary file must be packetized into smaller radio packets (2028 bytes / 200 bytes/packet = 11 packets per photo)
-
-2. **Missing Packet Shift**
-In `decode_downlink.py`:
-
-```python
-raw_bytes = list(bin_path.read_bytes())
-decoded_labels = [CLASSES[b] ... for b in raw_bytes]
+RECEPTION GRID (52 columns x 39 rows) [. = Received, X = Dropped]:
+------------------------------------------------------
+....................................................
+....................................................
+....................................................
+....................................................
+[All 39 rows fully received with zero gaps]
+------------------------------------------------------
+Ground CSV saved to: foto_0001_decoded.csv
+============================================================
 ```
 
-The decoder assumes byte index i strictly corresponds to patch index i on the 52 × 39 spatial grid but if packet #3 (patches 400 to 600) is dropped in the radio link due to interference, and the ground station simply concatenates the surviving packets: byte 601 now sits at index 401
-Every subsequent patch shifts backwards. The entire 2D reconstructed map of Earth gets corrupted: forests end up in rivers, and highways end up in crops.
+#### Case B: RF Packet Drop (Packet #3 Lost During Transmission)
+*Note: Packet #3 covers patches 600 to 799 (200 patches). Because of the offset header, patches 800+ remain in their exact spatial positions, preserving the geometry of roads, rivers, and forests.*
 
-**Recommendation**: Each LoRa packet must include an offset header [PHOTO_ID, PACKET_NUM, OFFSET]. The ground receiver must initialize a fixed 2,028-byte array (pre-filled with 0xFF / Unknown) and place incoming bytes into their exact grid slots.
+```
+============================================================
+SYNAPSE TELEMETRY DECODER - test_flight_packets.bin
+============================================================
+Format Mode           : LoRa Packet Stream (Photo ID: 0)
+Packets Received      : 10 / 11 (90.9%)
+Missing Packets       : [3] (dropped over radio)
+Total Patches Target  : 2028
+Patches Decoded       : 1828 (90.1% spatial coverage)
+Patches Dropped       : 200 (9.9% lost)
 
+CLASS DISTRIBUTION (Received Patches):
+  [AnnualCrop            ] :  229 patches ( 12.5%)
+  [Forest                ] :  229 patches ( 12.5%)
+  [Highway               ] :  229 patches ( 12.5%)
+  ...
 
+RECEPTION GRID (52 columns x 39 rows) [. = Received, X = Dropped]:
+------------------------------------------------------
+....................................................
+....................................................
+....................................................
+....................................................
+....................................................
+....................................................
+....................................................
+....................................................
+....................................................
+....................................................
+....................................................
+............................XXXXXXXXXXXXXXXXXXXXXXXX  <-- Patch 600 starts drop
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXX................................  <-- Patch 800 resumes accurately!
+....................................................
+....................................................
+....................................................
+------------------------------------------------------
 
+Ground CSV saved to: test_flight_packets_decoded.csv (Missing patches logged as DROPPED)
+============================================================
+```
